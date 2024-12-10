@@ -28,6 +28,7 @@ def place_antinodes(
     antenna_frequency: str,
     map_size: tuple[int, int],
     antinode_list: dict[tuple[int, int], list[str]],
+    only_place_single_antinode: bool = True,
 ) -> None:
     first_antenna, second_antenna = antennas
     location_vector = (
@@ -35,20 +36,36 @@ def place_antinodes(
         first_antenna[1] - second_antenna[1],
     )
     antinode_location = (
-        first_antenna[0] + location_vector[0],
-        first_antenna[1] + location_vector[1],
+        first_antenna[0],
+        first_antenna[1],
     )
-    antinode_x, antinode_y = antinode_location
-    if (
-        antinode_x < map_size[0]
-        and antinode_x >= 0
-        and antinode_y < map_size[1]
-        and antinode_y >= 0
-    ):
+    if not only_place_single_antinode:
         if antinode_location not in antinode_list:
             antinode_list[antinode_location] = [antenna_frequency]
         else:
             antinode_list[antinode_location].append(antenna_frequency)
+
+    done_placing = False
+    while not done_placing:
+        antinode_location = (
+            antinode_location[0] + location_vector[0],
+            antinode_location[1] + location_vector[1],
+        )
+        antinode_x, antinode_y = antinode_location
+        if (
+            antinode_x >= map_size[0]
+            or antinode_x < 0
+            or antinode_y >= map_size[1]
+            or antinode_y < 0
+        ):
+            done_placing = True
+        else:
+            if antinode_location not in antinode_list:
+                antinode_list[antinode_location] = [antenna_frequency]
+            else:
+                antinode_list[antinode_location].append(antenna_frequency)
+            if only_place_single_antinode:
+                done_placing = True
 
 
 if __name__ == "__main__":
@@ -57,13 +74,27 @@ if __name__ == "__main__":
         split_input = f.read().strip().split("\n")
         map_size = (len(split_input)), len(split_input[0])
         antenna_map = get_antenna_map(split_input)
-        print(antenna_map)
         antinode_list = {}
         for antennas, frequency in antenna_map.items():
             for antennas_2, frequency_2 in antenna_map.items():
                 if antennas != antennas_2 and frequency == frequency_2:
                     place_antinodes(
-                        (antennas, antennas_2), frequency, map_size, antinode_list
+                        (antennas, antennas_2),
+                        frequency,
+                        map_size,
+                        antinode_list,
+                        only_place_single_antinode=True,
                     )
-        # print(antinode_list)
-        print(len(antinode_list))
+        print("Part 1 answer:", len(antinode_list))
+        antinode_list = {}
+        for antennas, frequency in antenna_map.items():
+            for antennas_2, frequency_2 in antenna_map.items():
+                if antennas != antennas_2 and frequency == frequency_2:
+                    place_antinodes(
+                        (antennas, antennas_2),
+                        frequency,
+                        map_size,
+                        antinode_list,
+                        only_place_single_antinode=False,
+                    )
+        print("Part 2 answer:", len(antinode_list))
