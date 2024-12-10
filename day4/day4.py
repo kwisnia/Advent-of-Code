@@ -1,4 +1,4 @@
-input = """
+test_input = """
 MMMSXXMASM
 MSAMXMSMSA
 AMXSXMAAMM
@@ -11,95 +11,55 @@ MAMMMXMMMM
 MXMXAXMASX
 """
 
-
-def get_points_between_two_points_in_straight_line(
-    start: tuple[int, int], end: tuple[int, int]
-):
-    points = [start]
-    if start[0] == end[0]:
-        for i in range(start[1], end[1]):
-            points.append((start[0], i))
-    elif start[1] == end[1]:
-        for i in range(start[0], end[0]):
-            points.append((i, start[1]))
-    else:
-        if start[0] < end[0] and start[1] < end[1]:
-            for i in range(1, end[0] - start[0] + 1):
-                points.append((start[0] + i, start[1] + i))
-        elif start[0] < end[0] and start[1] > end[1]:
-            for i in range(1, end[0] - start[0] + 1):
-                points.append((start[0] + i, start[1] - i))
-        elif start[0] > end[0] and start[1] < end[1]:
-            for i in range(1, start[0] - end[0] + 1):
-                points.append((start[0] - i, start[1] + i))
-        else:
-            for i in range(1, start[0] - end[0] + 1):
-                points.append((start[0] - i, start[1] - i))
-    return points
+directions = {
+    "up": (-1, 0),
+    "down": (1, 0),
+    "left": (0, -1),
+    "right": (0, 1),
+    "up_left": (-1, -1),
+    "up_right": (1, 1),
+    "down_left": (1, -1),
+    "down_right": (-1, 1),
+}
 
 
-def check_potential_locations(
-    current_position: tuple[int, int], list_size: tuple[int, int]
-):
-    potential_locations = []
-    if current_position[0] - 3 >= 0:
-        potential_locations.append((current_position[0] - 3, current_position[1]))  # Up
-        if current_position[1] - 3 >= 0:
-            potential_locations.append(
-                (current_position[0] - 3, current_position[1] - 3)
-            )  # Up-Left
-        if current_position[1] + 3 < list_size[1]:
-            potential_locations.append(
-                (current_position[0] - 3, current_position[1] + 3)
-            )  # Up-Right
-    if current_position[0] + 3 < list_size[0]:
-        potential_locations.append(
-            (current_position[0] + 3, current_position[1])
-        )  # Down
-        if current_position[1] - 3 >= 0:
-            potential_locations.append(
-                (current_position[0] + 3, current_position[1] - 3)
-            )  # Down-Left
-        if current_position[1] + 4 < list_size[1]:
-            potential_locations.append(
-                (current_position[0] + 3, current_position[1] + 3)
-            )  # Down-Right
-    if current_position[1] - 3 >= 0:
-        potential_locations.append(
-            (current_position[0], current_position[1] - 3)
-        )  # Left
-    if current_position[1] + 3 < list_size[1]:
-        potential_locations.append(
-            (current_position[0], current_position[1] + 3)
-        )  # Right
-    return potential_locations
+def parse_input(input: list[str]) -> dict[tuple[int, int], str]:
+    return {
+        (x, y): input[y][x] for y in range(len(input)) for x in range(len(input[y]))
+    }
 
 
-def check_for_xmas(
-    current_position: tuple[int, int],
-    ending_position: tuple[int, int],
-    input: list[list[str]],
-):
-    points_between = get_points_between_two_points_in_straight_line(
-        current_position, ending_position
-    )
-    word = ""
-    for point in points_between:
-        word += input[point[0]][point[1]]
-    return word == "XMAS"
+def word_check(
+    word: str,
+    letter_map: dict[tuple[int, int], str],
+    starting_position: tuple[int, int],
+) -> int:
+    matches_found = 0
+    for direction in directions.values():
+        word_okay = True
+        x, y = starting_position
+        for i in range(len(word)):
+            checked_postion = x + direction[0] * i, y + direction[1] * i
+            if (
+                checked_postion not in letter_map
+                or letter_map[checked_postion] != word[i]
+            ):
+                word_okay = False
+        matches_found += word_okay
+
+    return matches_found
 
 
 if __name__ == "__main__":
-    xmas_count = 0
-    split_input = [list(i) for i in input.split("\n") if i != ""]
-    for i in range(len(split_input)):
-        for j in range(len(split_input[i])):
-            if split_input[i][j] == "X":
-                current_position = (i, j)
-                potential_locations = check_potential_locations(
-                    current_position, (len(split_input), len(split_input[0]))
-                )
-                for location in potential_locations:
-                    if check_for_xmas(current_position, location, split_input):
-                        xmas_count += 1
-    print(xmas_count)
+    with open("day4/day4.txt") as f:
+        # letter_map = parse_input(test_input.strip().split("\n"))
+        letter_map = parse_input(f.read().strip().split("\n"))
+        positions_with_letter_x = [
+            (x, y) for (x, y), letter in letter_map.items() if letter == "X"
+        ]
+        print(
+            "Part 1 answer: ",
+            sum(
+                [word_check("XMAS", letter_map, pos) for pos in positions_with_letter_x]
+            ),
+        )
