@@ -1,5 +1,3 @@
-from itertools import islice
-
 test_input = "2333133121414131402"
 
 
